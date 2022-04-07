@@ -1,0 +1,75 @@
+﻿{
+   "CodeGenerationMode": 2,
+   "ContextClassName": "DB_MarketplaceContext",
+   "ContextNamespace": "Data",
+   "DefaultDacpacSchema": null,
+   "FilterSchemas": false,
+   "IncludeConnectionString": false,
+   "ModelNamespace": "Models",
+   "OutputContextPath": "Data",
+   "OutputPath": "Models",
+   "ProjectRootNamespace": "APIMarketplaceApp",
+   "Schemas": null,
+   "SelectedHandlebarsLanguage": 0,
+   "SelectedToBeGenerated": 0,
+   "Tables": [
+      {
+         "Name": "[dbo].[Famille]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[dbo].[Magasin]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[dbo].[Prix_Produit]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[dbo].[Produit]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[dbo].[Sous_Famille]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[dbo].[Utilisateur]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[dbo].[InsertMagasin]",
+         "ObjectType": 1
+      },
+      {
+         "Name": "[dbo].[InsertPrix]",
+         "ObjectType": 1
+      },
+      {
+         "Name": "[dbo].[InsertProduit]",
+         "ObjectType": 1
+      },
+      {
+         "Name": "[dbo].[SearchProduit]",
+         "ObjectType": 1
+      }
+   ],
+   "UiHint": "DESKTOP-EOHC31Q\\SQLEXPRESS.DB_Marketplace",
+   "UseBoolPropertiesWithoutDefaultSql": false,
+   "UseDatabaseNames": false,
+   "UseDbContextSplitting": false,
+   "UseFluentApiOnly": true,
+   "UseHandleBars": false,
+   "UseHierarchyId": false,
+   "UseInflector": true,
+   "UseLegacyPluralizer": false,
+   "UseManyToManyEntity": false,
+   "UseNoConstructor": false,
+   "UseNoDefaultConstructor": false,
+   "UseNoNavigations": false,
+   "UseNoObjectFilter": false,
+   "UseNodaTime": false,
+   "UseNullableReferences": false,
+   "UseSchemaFolders": false,
+   "UseSpatial": false
+}
