@@ -30,6 +30,14 @@ namespace APIMarketplaceApp.Controllers
         {
             return await _context.GetProcedures().SearchProduitAsync(reference);
         }
+        [HttpGet("ProduitSimilairesAsync")]
+        public async Task<IEnumerable<ProduitSimilairesResult>> ProduitSimilairesAsync(string? reference, string? categorie)
+        {
+            return await _context.GetProcedures().ProduitSimilairesAsync(reference, categorie);
+        }
+        
+
+
     }
 
 

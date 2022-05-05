@@ -3,40 +3,16 @@
    "ContextClassName": "DB_MarketplaceContext",
    "ContextNamespace": "Data",
    "DefaultDacpacSchema": null,
-   "FilterSchemas": false,
+   "FilterSchemas": true,
    "IncludeConnectionString": false,
    "ModelNamespace": "Models",
    "OutputContextPath": "Data",
    "OutputPath": "Models",
    "ProjectRootNamespace": "APIMarketplaceApp",
-   "Schemas": null,
+   "Schemas": [ ],
    "SelectedHandlebarsLanguage": 0,
    "SelectedToBeGenerated": 0,
    "Tables": [
-      {
-         "Name": "[dbo].[Famille]",
-         "ObjectType": 0
-      },
-      {
-         "Name": "[dbo].[Magasin]",
-         "ObjectType": 0
-      },
-      {
-         "Name": "[dbo].[Prix_Produit]",
-         "ObjectType": 0
-      },
-      {
-         "Name": "[dbo].[Produit]",
-         "ObjectType": 0
-      },
-      {
-         "Name": "[dbo].[Sous_Famille]",
-         "ObjectType": 0
-      },
-      {
-         "Name": "[dbo].[Utilisateur]",
-         "ObjectType": 0
-      },
       {
          "Name": "[dbo].[InsertMagasin]",
          "ObjectType": 1
@@ -47,6 +23,10 @@
       },
       {
          "Name": "[dbo].[InsertProduit]",
+         "ObjectType": 1
+      },
+      {
+         "Name": "[dbo].[ProduitSimilaires]",
          "ObjectType": 1
       },
       {

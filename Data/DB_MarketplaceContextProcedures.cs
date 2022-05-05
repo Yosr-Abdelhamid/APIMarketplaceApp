@@ -37,6 +37,7 @@ namespace APIMarketplaceApp.Data
             modelBuilder.Entity<InsertMagasinResult>().HasNoKey().ToView(null);
             modelBuilder.Entity<InsertPrixResult>().HasNoKey().ToView(null);
             modelBuilder.Entity<InsertProduitResult>().HasNoKey().ToView(null);
+            modelBuilder.Entity<ProduitSimilairesResult>().HasNoKey().ToView(null);
             modelBuilder.Entity<SearchProduitResult>().HasNoKey().ToView(null);
         }
     }
@@ -46,6 +47,7 @@ namespace APIMarketplaceApp.Data
         Task<int> InsertMagasinAsync(string id_magasin, string Nom_magasin, CancellationToken cancellationToken = default);
         Task<int> InsertPrixAsync(int? id_prix, string prix, DateTime? Date, string url, CancellationToken cancellationToken = default);
         Task<int> InsertProduitAsync(string Reference, string Description, string Stock, int? id_prix, string id_magasin, string id_sous_famille, string Photo, CancellationToken cancellationToken = default);
+        Task<List<ProduitSimilairesResult>> ProduitSimilairesAsync(string reference, string categorie, CancellationToken cancellationToken = default);
         Task<List<SearchProduitResult>> SearchProduitAsync(string reference, CancellationToken cancellationToken = default);
     }
 
@@ -200,6 +202,40 @@ namespace APIMarketplaceApp.Data
                 parameterreturnValue,
             };
             var _ = await _context.Database.ExecuteSqlRawAsync("EXEC @returnValue = [dbo].[InsertProduit] @Reference, @Description, @Stock, @id_prix, @id_magasin, @id_sous_famille, @Photo", sqlParameters, cancellationToken);
+
+            returnValue?.SetValue(parameterreturnValue.Value);
+
+            return _;
+        }
+
+        public virtual async Task<List<ProduitSimilairesResult>> ProduitSimilairesAsync(string reference, string categorie, OutputParameter<int> returnValue = null, CancellationToken cancellationToken = default)
+        {
+            var parameterreturnValue = new SqlParameter
+            {
+                ParameterName = "returnValue",
+                Direction = System.Data.ParameterDirection.Output,
+                SqlDbType = System.Data.SqlDbType.Int,
+            };
+
+            var sqlParameters = new []
+            {
+                new SqlParameter
+                {
+                    ParameterName = "reference",
+                    Size = -1,
+                    Value = reference ?? Convert.DBNull,
+                    SqlDbType = System.Data.SqlDbType.VarChar,
+                },
+                new SqlParameter
+                {
+                    ParameterName = "categorie",
+                    Size = -1,
+                    Value = categorie ?? Convert.DBNull,
+                    SqlDbType = System.Data.SqlDbType.VarChar,
+                },
+                parameterreturnValue,
+            };
+            var _ = await _context.SqlQueryAsync<ProduitSimilairesResult>("EXEC @returnValue = [dbo].[ProduitSimilaires] @reference, @categorie", sqlParameters, cancellationToken);
 
             returnValue?.SetValue(parameterreturnValue.Value);
 

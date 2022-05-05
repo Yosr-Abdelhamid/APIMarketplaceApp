@@ -18,7 +18,6 @@ namespace APIMarketplaceApp.Data
             : base(options)
         {
         }
-
         public virtual DbSet<Famille> Familles { get; set; }
         public virtual DbSet<Magasin> Magasins { get; set; }
         public virtual DbSet<PrixProduit> PrixProduits { get; set; }
@@ -190,7 +189,6 @@ namespace APIMarketplaceApp.Data
                     .HasColumnName("id_user")
                     .IsFixedLength();
             });
-
             OnModelCreatingGeneratedProcedures(modelBuilder);
             OnModelCreatingPartial(modelBuilder);
         }
