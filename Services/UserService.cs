@@ -4,10 +4,12 @@ using System.Security.Claims;
 using System.Text;
 using APIMarketplaceApp.Models;
 using APIMarketplaceApp.Controllers;
+using APIMarketplaceApp.Services;
 using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
 using MongoDB.Driver;
 using Microsoft.EntityFrameworkCore.Metadata.Internal;
+
 
 namespace APIMarketplaceApp.Services
 {
@@ -28,10 +30,22 @@ namespace APIMarketplaceApp.Services
 
         public Vendeur GetVendeur(string id) => vendeurs.Find<Vendeur>(vendeur => vendeur.Id == id).FirstOrDefault();
 
-        public Vendeur Create(Vendeur vendeur)
-        {
+        public Vendeur Signup(Vendeur vendeur)
+        { 
+            vendeur.MotDePasse = BCrypt.Net.BCrypt.HashPassword(vendeur.MotDePasse);
             vendeurs.InsertOne(vendeur);
             return vendeur;
+        }
+
+        public AuthenticateResponse Login(AuthenticateRequest model) {
+            var vendeura = this.vendeurs.Find(x => x.Email == model.Email).FirstOrDefault();
+            bool isValidPassword = BCrypt.Net.BCrypt.Verify(model.MotDePasse , vendeura.MotDePasse);
+            if (isValidPassword) {
+                var token = generateJwtToken(vendeura);
+                return new AuthenticateResponse(vendeura, token);
+
+            }
+            return null;
         }
 
         public string Authenticate(string email, string password)
@@ -59,6 +73,21 @@ namespace APIMarketplaceApp.Services
             };
             var token = tokenHandler.CreateToken(tokenDescriptor);
 
+            return tokenHandler.WriteToken(token);
+        }
+
+        private string generateJwtToken(Vendeur vendeur)
+        {
+            // generate token that is valid for 7 days
+            var tokenHandler = new JwtSecurityTokenHandler();
+            var tokenKey = Encoding.ASCII.GetBytes(key);
+            var tokenDescriptor = new SecurityTokenDescriptor
+            {
+                Subject = new ClaimsIdentity(new[] { new Claim("id", vendeur.Id.ToString()) }),
+                Expires = DateTime.UtcNow.AddDays(7),
+                SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(tokenKey), SecurityAlgorithms.HmacSha256Signature)
+            };
+            var token = tokenHandler.CreateToken(tokenDescriptor);
             return tokenHandler.WriteToken(token);
         }
     }

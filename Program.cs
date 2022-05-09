@@ -7,6 +7,7 @@ using Microsoft.IdentityModel.Tokens;
 using Newtonsoft.Json;
 using System.Configuration;
 using System.Text;
+using Microsoft.AspNetCore.Authentication.Certificate;
 
 var myAllowSpecificOrigins = "_myAllowSpecificOrigins";
 
@@ -27,27 +28,28 @@ builder.Services.AddDbContext<APIMarketplaceApp.Data.DB_MarketplaceContext>(
     });
 
 builder.Services.AddSingleton<IDatabaseSettings>(db => db.GetRequiredService<IOptions<DatabaseSettings>>().Value);
+builder.Services.Configure<DatabaseSettings>(
+       builder.Configuration.GetSection(nameof(DatabaseSettings))) ;
 
 builder.Services.AddScoped<UserService>();
-
-builder.Services.AddMvc(option => option.EnableEndpointRouting = false)
-    .AddNewtonsoftJson(opt => opt.SerializerSettings.ReferenceLoopHandling = ReferenceLoopHandling.Ignore);
-
-
-
 builder.Services.AddCors(options =>
 {
     options.AddPolicy(name: myAllowSpecificOrigins,
         builder =>
         {
             builder.WithOrigins("http://localhost:4200")
-            .AllowAnyMethod()
-            .AllowAnyHeader();
+                    .AllowAnyHeader()
+                    .AllowAnyMethod()
+                    .AllowCredentials();
         });
 });
 
-builder.Services.Configure<DatabaseSettings>(
-       builder.Configuration.GetSection(nameof(DatabaseSettings)));
+builder.Services.AddMvc(option => option.EnableEndpointRouting = false)
+    .AddNewtonsoftJson(opt => opt.SerializerSettings.ReferenceLoopHandling = ReferenceLoopHandling.Ignore);
+ 
+builder.Services.AddAuthentication(
+        CertificateAuthenticationDefaults.AuthenticationScheme)
+        .AddCertificate();
 
 builder.Services.AddAuthentication(x =>
 {
@@ -76,9 +78,10 @@ if (app.Environment.IsDevelopment())
     app.UseSwagger();
     app.UseSwaggerUI();
 }
-app.UseCors(myAllowSpecificOrigins);
-
 app.UseHttpsRedirection();
+app.UseRouting();
+
+app.UseCors(myAllowSpecificOrigins);
 
 app.UseAuthorization();
 
