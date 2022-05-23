@@ -1,14 +1,9 @@
-﻿using MongoDB.Bson;
 using MongoDB.Bson.Serialization.Attributes;
 
 namespace APIMarketplaceApp.Models
 {
-    public class Vendeur
+    public class Account
     {
-        [BsonId]
-        [BsonRepresentation(BsonType.ObjectId)]
-        public string? Id { get; set; }
-
         [BsonElement("Nom")]
         public string Nom { get; set; }
 
@@ -26,17 +21,15 @@ namespace APIMarketplaceApp.Models
 
         [BsonElement("MotDePasse")]
         public string MotDePasse { get; set; }
-        [BsonElement("ResetToken")]
-
-        public string ResetToken { get; set; }
-
-        [BsonElement("VerificationToken")]
+       
+       [BsonElement("VerificationToken")]
         public string VerificationToken { get; set; }
+        
+        [BsonElement("ResetToken")]
+        public string ResetToken { get; set; }
         
         [BsonElement("PasswordReset")]
         public DateTime? PasswordReset { get; set; }
-
-    }
-
        
+    }
 }

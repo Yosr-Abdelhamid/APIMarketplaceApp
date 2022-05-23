@@ -8,6 +8,9 @@ using Newtonsoft.Json;
 using System.Configuration;
 using System.Text;
 using Microsoft.AspNetCore.Authentication.Certificate;
+using APIMarketplaceApp.Helpers;
+using AutoMapper;
+using APIMarketplaceApp.Helpers;
 
 var myAllowSpecificOrigins = "_myAllowSpecificOrigins";
 
@@ -31,7 +34,12 @@ builder.Services.AddSingleton<IDatabaseSettings>(db => db.GetRequiredService<IOp
 builder.Services.Configure<DatabaseSettings>(
        builder.Configuration.GetSection(nameof(DatabaseSettings))) ;
 
+builder.Services.Configure<AppSettings>(builder.Configuration.GetSection("AppSettings"));
+builder.Services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
+
 builder.Services.AddScoped<UserService>();
+builder.Services.AddScoped<IEmailService, EmailService>();
+
 builder.Services.AddCors(options =>
 {
     options.AddPolicy(name: myAllowSpecificOrigins,
