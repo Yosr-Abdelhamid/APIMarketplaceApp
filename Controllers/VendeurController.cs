@@ -11,6 +11,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
+using AutoMapper;
 using System.Web.Http.Cors;
 namespace APIMarketplaceApp.Controllers
 
@@ -23,15 +24,19 @@ namespace APIMarketplaceApp.Controllers
     {
         private readonly UserService service;
         private readonly IMongoCollection<Vendeur> vendeurs;
+        private readonly IMongoCollection<ProductVend> produits;
+        private readonly IMapper _mapper;
       
 
-        public VendeurController (UserService _service,IConfiguration configuration)
+        public VendeurController (UserService _service,IConfiguration configuration ,IMapper mapper)
         {
             var client = new MongoClient(configuration.GetConnectionString("MongoDBConnection"));
             var database = client.GetDatabase("MarketplaceSiteDB");
             vendeurs = database.GetCollection<Vendeur>("Vendeur");
+            produits = database.GetCollection<ProductVend>("ProductVend");
             service = _service;
-            vendeurs = database.GetCollection<Vendeur>("Vendeur");
+            _mapper = mapper;
+            
         }
         
         [HttpGet]
@@ -42,16 +47,7 @@ namespace APIMarketplaceApp.Controllers
             return service.GetVendeurs();
         }
 
-        // GET: VendeurController/Details/5
-    
-       /*  [HttpGet("{id:length(24)}")]
-        public ActionResult<Vendeur> GetVendeur(string id)
-        {
-            var vendeur = service.GetVendeur(id);
-            return Json(vendeur);
-        } */
-
-         [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
+        // [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
          [HttpGet("GetAllProducts")]
         public ActionResult <List<ProductVend>> GetProductById(string id)
         {
@@ -78,6 +74,45 @@ namespace APIMarketplaceApp.Controllers
             return Ok(new { message = "Product added" });
         }   
 
+        [HttpPut]
+        public JsonResult Put([FromForm] ProductModel produit,[FromForm] IFormFile image_prod)
+        {
+           
+            var filter = Builders<ProductVend>.Filter.Eq("Id_prod", produit.Id_prod);
+            var Produit = _mapper.Map<ProductVend>(produit);
+            MemoryStream memoryStream = new MemoryStream();
+            image_prod.OpenReadStream().CopyTo(memoryStream) ;
+            Produit.image_prod = Convert.ToBase64String(memoryStream.ToArray());
+
+            var update = Builders<ProductVend>.Update.Set("Reference", Produit.Reference)
+                                                    .Set("sous_famille_prod", Produit.sous_famille_prod)
+                                                    .Set("Brand", Produit.Brand)
+                                                    .Set("quantity", Produit.quantity)
+                                                    .Set("description_prod", Produit.description_prod)
+                                                    .Set("prix_prod", Produit.prix_prod)
+                                                    .Set("image_prod", Produit.image_prod);
+
+            this.produits.UpdateOne(filter, update);
+
+            return new JsonResult("Updated Successfully");
+        }
+
+
+        [HttpDelete("{id:length(24)}")]
+        public async Task<IActionResult> Delete(string id)
+        {
+         var prod = this.produits.Find(x => x.Id_prod == id).FirstOrDefaultAsync();
+
+        if (prod is null)
+        {
+            return NotFound();
+        }
+
+        await service.RemoveAsync(id);
+
+        return NoContent();
+        }
+        
 
         [AllowAnonymous]
         [HttpPost("authenticate")]

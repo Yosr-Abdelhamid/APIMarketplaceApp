@@ -24,7 +24,7 @@ namespace APIMarketplaceApp.Services
         private readonly string key;
         private readonly AppSettings _appSettings;
         private readonly IEmailService _emailService;
-         private readonly IMapper _mapper;
+        private readonly IMapper _mapper;
 
         public UserService(IConfiguration configuration ,IOptions<AppSettings> appSettings,
             IEmailService emailService , IMapper mapper)
@@ -62,6 +62,9 @@ namespace APIMarketplaceApp.Services
             this.produits.InsertOne(Produit) ;
 
         } 
+        
+        public async Task RemoveAsync(string id) =>
+            await produits.DeleteOneAsync(x => x.Id_prod == id);
 
         public List<ProductVend> GetProductById(string id) => produits.Find<ProductVend>(produit => produit.Id == id).ToList();
 
@@ -171,5 +174,8 @@ namespace APIMarketplaceApp.Services
             );
         }
 
+
+        
     }
 }
+
