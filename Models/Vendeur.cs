@@ -24,10 +24,22 @@ namespace APIMarketplaceApp.Models
         [BsonElement("Num_Telephone")]
         public string Num_Telephone { get; set; }
 
+        [BsonElement("ZipCode")]
+        public int ZipCode { get; set; }
+
+        [BsonElement("Organization")]
+        public string Organization { get; set; }
+
         [BsonElement("MotDePasse")]
         public string MotDePasse { get; set; }
-        [BsonElement("ResetToken")]
 
+        [BsonElement("isVerified")]
+        public bool isVerified { get;set; }
+
+         [BsonElement("image_org")]
+        public string image_org { get;set; }
+
+        [BsonElement("ResetToken")]
         public string ResetToken { get; set; }
 
         [BsonElement("VerificationToken")]
@@ -35,6 +47,7 @@ namespace APIMarketplaceApp.Models
         
         [BsonElement("PasswordReset")]
         public DateTime? PasswordReset { get; set; }
+
 
     }
 

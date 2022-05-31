@@ -14,6 +14,8 @@ using Microsoft.Extensions.Options;
 using AutoMapper;
 using BC = BCrypt.Net.BCrypt;
 using System.Security.Cryptography;
+using static Microsoft.EntityFrameworkCore.DbLoggerCategory;
+using Microsoft.AspNetCore.Mvc;
 
 namespace APIMarketplaceApp.Services
 {
@@ -43,14 +45,21 @@ namespace APIMarketplaceApp.Services
 
         public Vendeur GetVendeur(string id) => vendeurs.Find<Vendeur>(vendeur => vendeur.Id == id).FirstOrDefault();
 
-        public void Signup(RegisterRequest vendeur)
+        public string  Signup(RegisterRequest vendeur, string origin)
         { 
-            var account = _mapper.Map<Vendeur>(vendeur);
-            account.VerificationToken = randomTokenString();
-            account.MotDePasse = BCrypt.Net.BCrypt.HashPassword(vendeur.MotDePasse);
-            this.vendeurs.InsertOne(account) ;
+            var test = vendeurs.Find<Vendeur>(x => x.Email == vendeur.Email).FirstOrDefault() ;
+            if ( test == null) {
+                var account = _mapper.Map<Vendeur>(vendeur);
+                account.VerificationToken = randomTokenString();
+                account.MotDePasse = BCrypt.Net.BCrypt.HashPassword(vendeur.MotDePasse);
+                account.isVerified = false ;
+                this.vendeurs.InsertOne(account) ;
+                sendVerificationEmail(account,origin);
+                return  "Success Registration"; 
+                //sendAlreadyRegisteredEmail(vendeur.Email,origin);
+            }
+            return null;
         }
-
         public void AddProduct(RequestProduct produit , IFormFile image_prod,string id)
 
         {   var id_user = vendeurs.Find<Vendeur>(x => x.Id == id).FirstOrDefault();
@@ -78,11 +87,13 @@ namespace APIMarketplaceApp.Services
         }
 
         public  AuthenticateResponse Login(AuthenticateRequest model) {
-            var vendeura = this.vendeurs.Find(x => x.Email == model.Email).FirstOrDefault();
-            bool isValidPassword = BCrypt.Net.BCrypt.Verify(model.MotDePasse , vendeura.MotDePasse);
-            if (isValidPassword) {
-                var token = generateJwtToken(vendeura);
-                return new AuthenticateResponse(vendeura, token);
+            var vendeura = this.vendeurs.Find(x => x.Email == model.Email && x.isVerified).FirstOrDefault();
+            if (vendeura != null){
+                bool isValidPassword = BCrypt.Net.BCrypt.Verify(model.MotDePasse , vendeura.MotDePasse);
+                if (isValidPassword) {
+                    var token = generateJwtToken(vendeura);
+                    return new AuthenticateResponse(vendeura, token);
+            }
             }
             return null ;
         }
@@ -145,14 +156,32 @@ namespace APIMarketplaceApp.Services
         public void ResetPassword(ResetPasswordRequest model)
         {
 
-            var account = this.vendeurs.Find(x => x.ResetToken == model.Token ).SingleOrDefault();
+            var account = Builders<Vendeur>.Filter.Eq("ResetToken" ,model.Token);
 
             // update password and remove reset token
-            account.MotDePasse = BCrypt.Net.BCrypt.HashPassword(model.Password);
-            account.PasswordReset = DateTime.UtcNow;
-            vendeurs.ReplaceOneAsync(x =>  x.MotDePasse== model.Password, account);
+            //account.MotDePasse = BCrypt.Net.BCrypt.HashPassword(model.Password);
+            //account.PasswordReset = DateTime.UtcNow;
+            var update = Builders<Vendeur>.Update.Set("MotDePasse", BCrypt.Net.BCrypt.HashPassword(model.Password))
+                                                .Set("PasswordReset" ,DateTime.UtcNow) ;
+            this.vendeurs.UpdateOne(account, update);
+            //vendeurs.ReplaceOneAsync(x =>  x.MotDePasse== model.Password, account);
         }
+        
+           public string VerifyEmail(string token)
+        {
+            //var account = vendeurs.Find(x => x.VerificationToken == token).SingleOrDefault();
+            var filter = Builders<Vendeur>.Filter.Eq("VerificationToken", token);
 
+            if (filter == null) return ("Verification failed");
+
+            //account.isVerified = true;
+            var update = Builders<Vendeur>.Update.Set("isVerified", "true") ;
+
+            //vendeurs.ReplaceOne(x =>  x.isVerified == true, account);
+            //var result = this.vendeurs.UpdateOne(account, update);
+            this.vendeurs.UpdateOne(filter, update);
+            return ("Email Verified");
+        }
 
            private void sendPasswordResetEmail(Vendeur vendeur, string origin)
         {
@@ -171,6 +200,43 @@ namespace APIMarketplaceApp.Services
                 subject: "Sign-up Verification API - Reset Password",
                 html: $@"<h4>Reset Password Email</h4>
                          {message1}"
+            );
+        }
+
+        private void sendVerificationEmail(Vendeur vendeur, string origin)
+        {
+            string message;
+            
+            
+            var verifyUrl = $"{origin}/verify-email?token={vendeur.VerificationToken}";
+            message = $@"<p>Please click the below link to verify your email address:</p>
+                             <p><a href=""{verifyUrl}"">{verifyUrl}</a></p>";
+            
+
+            _emailService.Send(
+                to: vendeur.Email,
+                subject: "Sign-up Verification API - Verify Email",
+                html: $@"<h4>Verify Email</h4>
+                         <p>Thanks for registering!</p>
+                         {message}"
+            );
+        }
+
+        private void sendAlreadyRegisteredEmail(string email, string origin)
+        {
+            string message;
+            if (!string.IsNullOrEmpty(origin))
+
+                message = $@"<p>If you don't know your password please visit the <a href=""{origin}/forgot-password"">forgot password</a> page.</p>";
+            else
+                message = "<p>If you don't know your password you can reset it via the <code>/forgot-password</code> api route.</p>";
+
+            _emailService.Send(
+                to: email,
+                subject: "Sign-up Verification API - Email Already Registered",
+                html: $@"<h4>Email Already Registered</h4>
+                         <p>Your email <strong>{email}</strong> is already registered.</p>
+                         {message}"
             );
         }
 

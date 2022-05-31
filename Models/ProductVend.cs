@@ -28,7 +28,7 @@ namespace APIMarketplaceApp.Models
 
         [BsonElement("image_prod")]
         public string  image_prod { get; set; }
-
+        
         [BsonElement("Id")]
         public string Id { get; set; }
         }

@@ -9,6 +9,11 @@ namespace APIMarketplaceApp.Models
         ResponseMessage=responseMessage;
         DateSet=dataSet;
         }
+        public ResponseModel(int responseCode, string responseMessage)
+        {
+        ResponseCode=responseCode;
+        ResponseMessage=responseMessage;
+        }
          public int ResponseCode { get; set; }
          public string ResponseMessage { get; set; }
          public object DateSet { get; set; }
