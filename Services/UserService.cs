@@ -23,6 +23,10 @@ namespace APIMarketplaceApp.Services
     {
         private readonly IMongoCollection<Vendeur> vendeurs;
         private readonly IMongoCollection<ProductVend> produits;
+         private readonly IMongoCollection<Client> clients;
+        private readonly IMongoCollection<Admin> admins;
+
+        private readonly IMongoCollection<Contact> contacts;
         private readonly string key;
         private readonly AppSettings _appSettings;
         private readonly IEmailService _emailService;
@@ -35,6 +39,10 @@ namespace APIMarketplaceApp.Services
             var database = client.GetDatabase("MarketplaceSiteDB");
             vendeurs = database.GetCollection<Vendeur>("Vendeur");
             produits = database.GetCollection<ProductVend>("ProductVend");
+            admins= database.GetCollection<Admin>("Admin");
+            clients= database.GetCollection<Client>("Client");
+            contacts=database.GetCollection<Contact>("Contact") ;
+
             this.key = configuration.GetSection("JwtKey").ToString();
              _appSettings = appSettings.Value;
             _emailService = emailService;
@@ -43,7 +51,7 @@ namespace APIMarketplaceApp.Services
 
         public List<Vendeur> GetVendeurs() => vendeurs.Find(vendeur => true).ToList();
 
-        public Vendeur GetVendeur(string id) => vendeurs.Find<Vendeur>(vendeur => vendeur.Id == id).FirstOrDefault();
+        public Vendeur GetVendeur(string id) => vendeurs.Find<Vendeur>(vendeur => (vendeur.Id).ToString() == id).FirstOrDefault();
 
         public string  Signup(RegisterRequest vendeur, string origin)
         { 
@@ -60,14 +68,48 @@ namespace APIMarketplaceApp.Services
             }
             return null;
         }
+
+         public string  RegisterClient(ClientRequest client, string origin)
+        { 
+            var test = clients.Find<Client>(x => x.Email == client.Email).FirstOrDefault() ;
+            if ( test == null) {
+                var account = _mapper.Map<Client>(client);
+                account.VerificationToken = randomTokenString();
+                account.Role="isClient" ;
+                account.MotDePasse = BCrypt.Net.BCrypt.HashPassword(client.MotDePasse);
+                account.isVerified = false ;
+                this.clients.InsertOne(account) ;
+                sendVerificationEmails(account,origin);
+                return  "Success Registration"; 
+                //sendAlreadyRegisteredEmail(vendeur.Email,origin);
+            }
+            return null;
+        }
+
+        public string  RegisterAdmin(UserAdminRequest admin, string origin)
+        { 
+            var test = admins.Find<Admin>(x => x.Email == admin.Email).FirstOrDefault() ;
+            if ( test == null) {
+                var account = _mapper.Map<Admin>(admin);
+                account.VerificationToken = randomTokenString();
+                account.Role = "isAdmin" ;
+                account.MotDePasse = BCrypt.Net.BCrypt.HashPassword(admin.MotDePasse); 
+                this.admins.InsertOne(account) ;
+                //sendVerificationEmails(account,origin);
+                return  "Success Registration"; 
+                //sendAlreadyRegisteredEmail(vendeur.Email,origin);
+            }
+            return null;
+        }
+
         public void AddProduct(RequestProduct produit , IFormFile image_prod,string id)
 
-        {   var id_user = vendeurs.Find<Vendeur>(x => x.Id == id).FirstOrDefault();
+        {   var id_user = vendeurs.Find<Vendeur>(x => x.Id== id).FirstOrDefault();
             var Produit = _mapper.Map<ProductVend>(produit);
             MemoryStream memoryStream = new MemoryStream();
             image_prod.OpenReadStream().CopyTo(memoryStream) ;
             Produit.image_prod = Convert.ToBase64String(memoryStream.ToArray());
-            Produit.Id = id_user.Id ;
+            Produit.Id = (id_user.Id).ToString() ;
             this.produits.InsertOne(Produit) ;
 
         } 
@@ -76,6 +118,8 @@ namespace APIMarketplaceApp.Services
             await produits.DeleteOneAsync(x => x.Id_prod == id);
 
         public List<ProductVend> GetProductById(string id) => produits.Find<ProductVend>(produit => produit.Id == id).ToList();
+
+        public List<ProductVend> GetProductByCategory(string sous_famille_prod) => produits.Find<ProductVend>(produit => produit.sous_famille_prod == sous_famille_prod).ToList();
 
           private string randomTokenString()
         {
@@ -97,6 +141,34 @@ namespace APIMarketplaceApp.Services
             }
             return null ;
         }
+
+        public  AdminUserResponse LoginUser(AuthenticateRequest model) {
+            var client = this.clients.Find(x => x.Email == model.Email).FirstOrDefault();
+            if (client != null) {
+                bool isValidPassword = BCrypt.Net.BCrypt.Verify(model.MotDePasse , client.MotDePasse);
+                if (isValidPassword) {
+                    var tokenHandler = new JwtSecurityTokenHandler();
+                    var tokenKey = Encoding.ASCII.GetBytes(key);
+                    var tokenDescriptor = new SecurityTokenDescriptor
+                        {
+                        Subject = new ClaimsIdentity(new[] { new Claim("id", client.Id.ToString()) }),
+                        Expires = DateTime.UtcNow.AddDays(7),
+                        SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(tokenKey), SecurityAlgorithms.HmacSha256Signature)
+                        };
+                    var token = tokenHandler.CreateToken(tokenDescriptor);
+                    return new AdminUserResponse(client, tokenHandler.WriteToken(token));}
+           
+            }else {
+                var admin = this.admins.Find(x => x.Email == model.Email).FirstOrDefault();
+                bool isValidPassword = BCrypt.Net.BCrypt.Verify(model.MotDePasse , admin.MotDePasse);
+                if (isValidPassword) { 
+                var token = generateJwtTokens(admin);
+                return new AdminUserResponse(admin, token);}
+                
+                } 
+            return null ;
+        }
+
 
         public string Authenticate(string email, string password)
         {
@@ -141,6 +213,22 @@ namespace APIMarketplaceApp.Services
             return tokenHandler.WriteToken(token);
         }
 
+        private string generateJwtTokens(Admin admin)
+        {
+            // generate token that is valid for 7 days
+            var tokenHandler = new JwtSecurityTokenHandler();
+            var tokenKey = Encoding.ASCII.GetBytes(key);
+            var tokenDescriptor = new SecurityTokenDescriptor
+            {
+                Subject = new ClaimsIdentity(new[] { new Claim("id", admin.Id.ToString()) }),
+                Expires = DateTime.UtcNow.AddDays(7),
+                SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(tokenKey), SecurityAlgorithms.HmacSha256Signature)
+            };
+            var token = tokenHandler.CreateToken(tokenDescriptor);
+            return tokenHandler.WriteToken(token);
+        }
+
+
         public void ForgotPassword(ForgotPasswordRequest model, string origin)
         {
            var vendeur = this.vendeurs.Find(x => x.Email == model.Email).SingleOrDefault();
@@ -183,6 +271,22 @@ namespace APIMarketplaceApp.Services
             return ("Email Verified");
         }
 
+           public string VerifyEmailClient(string token)
+        {
+            //var account = vendeurs.Find(x => x.VerificationToken == token).SingleOrDefault();
+            var filter = Builders<Client>.Filter.Eq("VerificationToken", token);
+
+            if (filter == null) return ("Verification failed");
+
+            //account.isVerified = true;
+            var update = Builders<Client>.Update.Set("isVerified", "true") ;
+
+            //vendeurs.ReplaceOne(x =>  x.isVerified == true, account);
+            //var result = this.vendeurs.UpdateOne(account, update);
+            this.clients.UpdateOne(filter, update);
+            return ("Email Verified");
+        }
+
            private void sendPasswordResetEmail(Vendeur vendeur, string origin)
         {
             string message1,message;
@@ -221,6 +325,24 @@ namespace APIMarketplaceApp.Services
                          {message}"
             );
         }
+        private void sendVerificationEmails(Client client, string origin)
+        {
+            string message;
+            
+            
+            var verifyUrl = $"{origin}/verify-email-client?token={client.VerificationToken}";
+            message = $@"<p>Please click the below link to verify your email address:</p>
+                             <p><a href=""{verifyUrl}"">{verifyUrl}</a></p>";
+            
+
+            _emailService.Send(
+                to: client.Email,
+                subject: "Sign-up Verification API - Verify Email",
+                html: $@"<h4>Verify Email</h4>
+                         <p>Thanks for registering!</p>
+                         {message}"
+            );
+        }
 
         private void sendAlreadyRegisteredEmail(string email, string origin)
         {
@@ -240,6 +362,12 @@ namespace APIMarketplaceApp.Services
             );
         }
 
+        private void sendEmailReply(string email , string sujet , string message) {
+            _emailService.Send(
+                to : email ,
+                subject : sujet ,
+                html : message) ;
+        }
 
         
     }

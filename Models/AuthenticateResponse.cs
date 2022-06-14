@@ -1,4 +1,5 @@
 using APIMarketplaceApp.Models;
+using MongoDB.Bson;
 
 namespace APIMarketplaceApp.Models
 {

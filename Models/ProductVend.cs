@@ -32,5 +32,13 @@ namespace APIMarketplaceApp.Models
         [BsonElement("Id")]
         public string Id { get; set; }
         }
+
+       public class ProductLookUp : ProductVend {
+            public string Id { get; set; }
+            public string Reference { get; set; }
+             public int quantity { get; set; }
+             public decimal prix_prod { get; set; }
+            public List<Vendeur> VendeurList ;
+       } 
     
 }

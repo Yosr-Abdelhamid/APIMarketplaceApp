@@ -56,8 +56,7 @@ namespace APIMarketplaceApp.Controllers
                 return BadRequest(new { message = "Email in use." });
             } 
             return Ok(new { message = "Registration successful" });   
-        }  
-
+        }    
 
         //[Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
         [HttpPost("addProduct")]
@@ -95,6 +94,12 @@ namespace APIMarketplaceApp.Controllers
 
             return new JsonResult("Updated Successfully");
         }
+        [HttpGet("GetProductByCategory")]
+        public ActionResult <List<ProductVend>> GetProductByCategory(string sous_famille_prod){
+
+             var Products = service.GetProductByCategory(sous_famille_prod);
+            return Json(Products);
+        }
 
         [HttpPut("UpdateImage")]
         public JsonResult Put([FromForm] ImageUpload image , [FromForm] IFormFile image_prod, [FromForm] string Id_prod)
@@ -109,6 +114,24 @@ namespace APIMarketplaceApp.Controllers
             return new JsonResult("Updated Successfully");
         }
 
+        [HttpPut("UpdateProfile")]
+        public JsonResult PutProfile ([FromForm] UpdateVendeur vendeur)
+        {    
+            var filter = Builders<Vendeur>.Filter.Eq("Id", vendeur.id);
+            var Vendeur = _mapper.Map<Vendeur>(vendeur);
+            var update = Builders<Vendeur>.Update.Set("Nom" , vendeur.Nom)
+                                                .Set("Prenom", vendeur.Prenom)
+                                                .Set("Email" , vendeur.Email)
+                                                .Set("Adresse" , vendeur.Adresse)
+                                                .Set("Num_Telephone" , vendeur.Num_Telephone)
+                                                .Set("ZipCode" , vendeur.ZipCode)
+                                                .Set("Organization" , vendeur.Organization) ;                         
+
+            this.vendeurs.UpdateOne(filter, update);
+
+            return new JsonResult("Updated Successfully");
+        }
+
          [HttpPut("AddImageOrg")]
         public JsonResult AddImageOrg([FromForm] ImageOrganisation image , [FromForm] IFormFile image_org, [FromForm] string id)
         {
@@ -119,7 +142,7 @@ namespace APIMarketplaceApp.Controllers
             vendeur.image_org= Convert.ToBase64String(memoryStream.ToArray()) ;
             var update = Builders<Vendeur>.Update.Set("image_org", vendeur.image_org);
             this.vendeurs.UpdateOne(filter, update);
-            return new JsonResult("Image added Successfully");
+            return new JsonResult("Logo updated Successfully");
         }
 
         [HttpDelete("{id:length(24)}")]
@@ -200,7 +223,7 @@ namespace APIMarketplaceApp.Controllers
         {
             
                 var user =  vendeurs.Find<Vendeur>(vendeur => vendeur.Id == id).FirstOrDefault();
-                var UserDTO = new User(user.Id,user.Nom, user.Prenom, user.Email, user.Adresse ,user.Num_Telephone , user.ZipCode , user.Organization);
+                var UserDTO = new User((user.Id).ToString(),user.Nom, user.Prenom, user.Email, user.Adresse ,user.Num_Telephone , user.ZipCode , user.Organization);
                 //UserDTO.Add(new User(user.Id,user.Nom, user.Prenom, user.Email, user.Adresse ,user.Num_Telephone));
                 return await Task.FromResult(new ResponseModel(1, "", UserDTO));
         }
@@ -220,7 +243,8 @@ namespace APIMarketplaceApp.Controllers
                  user.Adresse,
                  user.Num_Telephone,
                  user.ZipCode,
-                 user.Organization
+                 user.Organization,
+                 user.image_org
             };
         }
            

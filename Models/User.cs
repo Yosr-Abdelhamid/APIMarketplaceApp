@@ -12,6 +12,16 @@ namespace APIMarketplaceApp.Models
             ZipCode = zipcode ;
             Organization =organization ;
         }
+           public User(string id,string nom , string prenom , string email, string adresse , string num , int zipcode) {
+            Id = id;
+            Nom = nom;
+            Prenom = prenom;
+            Email = email;
+            Adresse = adresse;
+            Num_Telephone =num;
+            ZipCode = zipcode ;
+           
+        }
         public string Id { get; set; }
         public string Nom { get; set; }
         public string Prenom { get; set; }

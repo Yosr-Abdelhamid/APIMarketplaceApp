@@ -23,7 +23,6 @@ namespace APIMarketplaceApp.Data
         public virtual DbSet<PrixProduit> PrixProduits { get; set; }
         public virtual DbSet<Produit> Produits { get; set; }
         public virtual DbSet<SousFamille> SousFamilles { get; set; }
-        public virtual DbSet<Utilisateur> Utilisateurs { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -171,23 +170,6 @@ namespace APIMarketplaceApp.Data
                     .HasForeignKey(d => d.IdFamille)
                     .OnDelete(DeleteBehavior.ClientSetNull)
                     .HasConstraintName("FK__Sous_Fami__id_fa__2E1BDC42");
-            });
-
-            modelBuilder.Entity<Utilisateur>(entity =>
-            {
-                entity.HasNoKey();
-
-                entity.ToTable("Utilisateur");
-
-                entity.Property(e => e.Email)
-                    .IsRequired()
-                    .IsUnicode(false);
-
-                entity.Property(e => e.IdUser)
-                    .IsRequired()
-                    .HasMaxLength(100)
-                    .HasColumnName("id_user")
-                    .IsFixedLength();
             });
             OnModelCreatingGeneratedProcedures(modelBuilder);
             OnModelCreatingPartial(modelBuilder);

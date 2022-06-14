@@ -1,9 +1,9 @@
-﻿using MongoDB.Bson;
+using MongoDB.Bson;
 using MongoDB.Bson.Serialization.Attributes;
 
 namespace APIMarketplaceApp.Models
 {
-    public class Client
+    public class Admin
     {
         [BsonId]
         [BsonRepresentation(BsonType.ObjectId)]
@@ -26,24 +26,15 @@ namespace APIMarketplaceApp.Models
 
         [BsonElement("ZipCode")]
         public int ZipCode { get; set; }
-          [BsonElement("Role")]
+        
+        [BsonElement("Role")]
         public string Role { get; set; }
 
         [BsonElement("MotDePasse")]
         public string MotDePasse { get; set; }
 
-        [BsonElement("isVerified")]
-        public bool isVerified { get;set; }
-
-        [BsonElement("ResetToken")]
-        public string ResetToken { get; set; }
-
         [BsonElement("VerificationToken")]
         public string VerificationToken { get; set; }
         
-        [BsonElement("PasswordReset")]
-        public DateTime? PasswordReset { get; set; }
-
-
     }
 }
