@@ -16,6 +16,7 @@ using BC = BCrypt.Net.BCrypt;
 using System.Security.Cryptography;
 using static Microsoft.EntityFrameworkCore.DbLoggerCategory;
 using Microsoft.AspNetCore.Mvc;
+using Newtonsoft.Json;
 
 namespace APIMarketplaceApp.Services
 {
@@ -27,6 +28,7 @@ namespace APIMarketplaceApp.Services
         private readonly IMongoCollection<Admin> admins;
 
         private readonly IMongoCollection<Contact> contacts;
+        private readonly IMongoCollection<Commande> commandes;
         private readonly string key;
         private readonly AppSettings _appSettings;
         private readonly IEmailService _emailService;
@@ -42,6 +44,7 @@ namespace APIMarketplaceApp.Services
             admins= database.GetCollection<Admin>("Admin");
             clients= database.GetCollection<Client>("Client");
             contacts=database.GetCollection<Contact>("Contact") ;
+            commandes=database.GetCollection<Commande>("Commande") ;
 
             this.key = configuration.GetSection("JwtKey").ToString();
              _appSettings = appSettings.Value;
@@ -113,9 +116,20 @@ namespace APIMarketplaceApp.Services
             this.produits.InsertOne(Produit) ;
 
         } 
+
+          public void AddOrder(RequestOrder order )
+
+        {   
+            var Order = _mapper.Map<Commande>(order);
+            this.commandes.InsertOne(Order) ;
+
+        } 
         
         public async Task RemoveAsync(string id) =>
             await produits.DeleteOneAsync(x => x.Id_prod == id);
+        
+          public async Task RemoveAsyn(string id) =>
+            await contacts.DeleteOneAsync(x => x.Id == id);
 
         public List<ProductVend> GetProductById(string id) => produits.Find<ProductVend>(produit => produit.Id == id).ToList();
 
@@ -241,6 +255,18 @@ namespace APIMarketplaceApp.Services
             sendPasswordResetEmail(vendeur, origin);
         }
 
+         public void ForgotPasswordUser(ForgotPasswordRequest model, string origin)
+        {
+           var client = this.clients.Find(x => x.Email == model.Email).SingleOrDefault();
+
+            // always return ok response to prevent email enumeration
+            if (client == null) 
+                return;
+            client.ResetToken = randomTokenString();
+            clients.ReplaceOneAsync(x =>  x.Email== model.Email, client);
+            sendPasswordResetUserEmail(client, origin);
+        }
+
         public void ResetPassword(ResetPasswordRequest model)
         {
 
@@ -252,6 +278,19 @@ namespace APIMarketplaceApp.Services
             var update = Builders<Vendeur>.Update.Set("MotDePasse", BCrypt.Net.BCrypt.HashPassword(model.Password))
                                                 .Set("PasswordReset" ,DateTime.UtcNow) ;
             this.vendeurs.UpdateOne(account, update);
+            //vendeurs.ReplaceOneAsync(x =>  x.MotDePasse== model.Password, account);
+        }
+        public void ResetPasswordUser(ResetPasswordRequest model)
+        {
+
+            var account = Builders<Client>.Filter.Eq("ResetToken" ,model.Token);
+
+            // update password and remove reset token
+            //account.MotDePasse = BCrypt.Net.BCrypt.HashPassword(model.Password);
+            //account.PasswordReset = DateTime.UtcNow;
+            var update = Builders<Client>.Update.Set("MotDePasse", BCrypt.Net.BCrypt.HashPassword(model.Password))
+                                                .Set("PasswordReset" ,DateTime.UtcNow) ;
+            this.clients.UpdateOne(account, update);
             //vendeurs.ReplaceOneAsync(x =>  x.MotDePasse== model.Password, account);
         }
         
@@ -287,7 +326,8 @@ namespace APIMarketplaceApp.Services
             return ("Email Verified");
         }
 
-           private void sendPasswordResetEmail(Vendeur vendeur, string origin)
+
+         private void sendPasswordResetEmail(Vendeur vendeur, string origin)
         {
             string message1,message;
            
@@ -301,6 +341,26 @@ namespace APIMarketplaceApp.Services
 
             _emailService.Send(
                 to: vendeur.Email,
+                subject: "Sign-up Verification API - Reset Password",
+                html: $@"<h4>Reset Password Email</h4>
+                         {message1}"
+            );
+        }
+
+         private void sendPasswordResetUserEmail(Client client, string origin)
+        {
+            string message1,message;
+           
+                var resetUrl = $"{origin}/reset-password-user?token={client.ResetToken}";
+                message1 = $@"<p>Please click the below link to reset your password, the link will be valid for 1 day:</p>
+                             <p><a href=""{resetUrl}"">{resetUrl}</a></p>";
+            
+                message = $@"<p>Please use the below token to reset your password with the <code>/accounts/reset-password</code> api route:</p>
+                             <p><code>{client.ResetToken}</code></p>";
+            
+
+            _emailService.Send(
+                to: client.Email,
                 subject: "Sign-up Verification API - Reset Password",
                 html: $@"<h4>Reset Password Email</h4>
                          {message1}"

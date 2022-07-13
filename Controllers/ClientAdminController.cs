@@ -10,11 +10,13 @@ using MongoDB.Driver;
 using System.Collections.Generic;
 using System.Linq;
  using MongoDB.Driver.Linq;
+ using System.Text.Json;
 using System.Net;
 using System.Net.Http;
 using AutoMapper;
 using System.Web.Http.Cors;
 using MongoDB.Bson;
+using Newtonsoft.Json;
 
 namespace APIMarketplaceApp.Controllers
 {
@@ -29,6 +31,7 @@ namespace APIMarketplaceApp.Controllers
         private readonly IMongoCollection<ProductVend> produits ;
         private readonly IMongoCollection<Vendeur> vendeurs ;
         private readonly IMongoCollection<Contact> contacts;
+        private readonly IMongoCollection<Commande> commandes;
         private readonly IMapper _mapper;
          private readonly IEmailService _emailService;
 
@@ -40,6 +43,7 @@ namespace APIMarketplaceApp.Controllers
             vendeurs = database.GetCollection<Vendeur>("Vendeur");
             produits = database.GetCollection<ProductVend>("ProductVend");
             contacts=database.GetCollection<Contact>("Contact") ;
+            commandes=database.GetCollection<Commande>("Commande") ;
             
             _emailService = emailService;
             service = _service;
@@ -168,6 +172,55 @@ namespace APIMarketplaceApp.Controllers
             return productts ; 
             
         }
+         [HttpGet("GetListProductsById")]
+        public async Task<object> GetListProductsById(string id_produit)
+
+       {    
+            var query = from o in produits.AsQueryable()
+             join i in vendeurs.AsQueryable()
+             on o.Id equals i.Id
+             into ListVendeurs
+             select new VendeurLookup
+            {
+                Id = id_produit, 
+                Reference = o.Reference,
+                sous_famille_prod= o.sous_famille_prod,
+                Brand = o.Brand ,
+                quantity = o.quantity ,
+                description_prod = o.description_prod ,
+                prix_prod = o.prix_prod,
+                image_prod = o.image_prod,
+                Vendeurs =  (List<Vendeur>)ListVendeurs
+            };
+            var productts =  query.FirstOrDefault();
+            return productts ; 
+            
+        }
+        [HttpGet("GetProductsByCategory")]
+        public ActionResult <List<VendeurLookup>> GetProductsByCategory(string sous_famille)
+
+       {    
+            var query = from o in produits.AsQueryable().Where(x => x.sous_famille_prod == sous_famille)
+             join i in vendeurs.AsQueryable()
+             on o.Id equals i.Id 
+             into ListVendeurs
+             select new VendeurLookup
+            {
+                sous_famille_prod= sous_famille,
+                Id = o.Id_prod,
+                Reference = o.Reference,
+                Brand = o.Brand ,
+                quantity = o.quantity ,
+                description_prod = o.description_prod ,
+                prix_prod = o.prix_prod,
+                image_prod = o.image_prod,
+                Vendeurs =  (List<Vendeur>)ListVendeurs
+            };
+            var productts =  query.ToList();
+            return Json(productts) ; 
+            
+        }
+       
             
         [HttpPost("AddContact")]
         public  async Task<object> AddContact(Contact contact)
@@ -175,7 +228,7 @@ namespace APIMarketplaceApp.Controllers
         {   
             contacts.InsertOne(contact);
             return Ok(new { message = "Contact Sended with success" });   
-        }  
+        }
         
 
         [HttpGet("GetContact")]
@@ -196,9 +249,91 @@ namespace APIMarketplaceApp.Controllers
                 subject : reponse.sujet ,
                 html : reponse.message) ;
         } 
+
+
+        [HttpDelete("{id:length(24)}")]
+        public async Task<IActionResult> Delete(string id)
+        {
+         var contact = this.contacts.Find(x => x.Id == id).FirstOrDefaultAsync();
+
+        if (contact is null)
+        {
+            return NotFound();
+        }
+
+        await service.RemoveAsyn(id);
+
+        return NoContent();
+        }
+
+         [HttpPost("forgot-password-user")]
+        public IActionResult ForgotPasswordUser(ForgotPasswordRequest model)
+        {
+            service.ForgotPasswordUser(model, Request.Headers["origin"]);
+            return Ok(new { message = "Please check your email for password reset instructions" });
+        }
+
+        [HttpPost("reset-password-user")]
+        public IActionResult ResetPasswordUser(ResetPasswordRequest model)
+        {
+            service.ResetPasswordUser(model);
+            return Ok(new { message = "Password reset successful, you can now login" });
+        }
+
+
+        [HttpPost("AddOrder")]
+        public async Task <ActionResult<IEnumerable<Commande>>> AddOrder(Commande commande)
+
+        {   
+            commandes.InsertOne(commande);
+            return Ok(new { message = "Order passed with success" });   
         } 
+
+        [HttpGet("GetOrder")]
+        public  async Task<object> GetOrder()
+
+        {  var result = commandes.Find(commande => true).ToList();  
+         
+            return result;
+            
+        } 
+
+        [HttpGet("GetOrderByStore")]
+        public  async Task<object> GetOrderByStore(string organization)
+
+        {    
+            /* var findFluent = commandes.Find(Builders<Commande>.Filter.ElemMatch(
+                x => x.produits, 
+                s => s.organization == organization)); */
+
+            var query = from doc in commandes.AsQueryable()
+            where doc.produits.Any(x => x.organization == organization)
+            select new Commande()
+            {
+                Id = doc.Id,
+                name = doc.name ,
+                lastName = doc.lastName,
+                country = doc.country ,
+                street = doc.street ,
+                city = doc.city,
+                zip = doc.zip,
+                phone = doc.phone,
+                email= doc.email,
+                produits = (List<ProduitOrder>)doc.produits.Where(x => x.organization == organization) ,
+                total = doc.total ,
+                payment = doc.payment };
+
+            var result = query.ToList();
+            
+            return result ;
+        } 
+
+
+        } 
+
+
 
     
 }
             
-                
+                 

@@ -1,7 +1,8 @@
 namespace APIMarketplaceApp.Models
 {
         public class VendeurLookup  {
-
+        
+        public string Id { get; set; }
         public string Reference { get; set; }
         public string sous_famille_prod { get; set; }
         public string Brand { get; set; }
