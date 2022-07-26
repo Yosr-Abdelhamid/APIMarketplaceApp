@@ -2,11 +2,11 @@ using MongoDB.Bson.Serialization.Attributes;
 using MongoDB.Bson.Serialization.IdGenerators;
 
 namespace APIMarketplaceApp.Models
+
 {
-    public class Commande
+    public class CommandeRequest
     {
-    
-        [BsonId(IdGenerator = typeof(StringObjectIdGenerator))]
+          [BsonId(IdGenerator = typeof(StringObjectIdGenerator))]
         public string? Id { get; set; }
 
         [BsonElement("name")]
@@ -39,12 +39,9 @@ namespace APIMarketplaceApp.Models
         [BsonElement("total")]
         public  double total { get; set; }
 
-        [BsonElement("payment")]
+         [BsonElement("payment")]
         public  string payment { get; set; }
 
-        [BsonElement("delivred")]
-        public  Boolean delivred { get; set; }
-
+    
     }
-        
 }

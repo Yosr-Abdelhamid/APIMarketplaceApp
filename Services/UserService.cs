@@ -29,6 +29,7 @@ namespace APIMarketplaceApp.Services
 
         private readonly IMongoCollection<Contact> contacts;
         private readonly IMongoCollection<Commande> commandes;
+        private readonly IMongoCollection<Notif> notifications ;
         private readonly string key;
         private readonly AppSettings _appSettings;
         private readonly IEmailService _emailService;
@@ -45,6 +46,7 @@ namespace APIMarketplaceApp.Services
             clients= database.GetCollection<Client>("Client");
             contacts=database.GetCollection<Contact>("Contact") ;
             commandes=database.GetCollection<Commande>("Commande") ;
+            notifications =database.GetCollection<Notif>("Notifications");
 
             this.key = configuration.GetSection("JwtKey").ToString();
              _appSettings = appSettings.Value;
@@ -64,6 +66,7 @@ namespace APIMarketplaceApp.Services
                 account.VerificationToken = randomTokenString();
                 account.MotDePasse = BCrypt.Net.BCrypt.HashPassword(vendeur.MotDePasse);
                 account.isVerified = false ;
+                account.isActived = false ;
                 this.vendeurs.InsertOne(account) ;
                 sendVerificationEmail(account,origin);
                 return  "Success Registration"; 
@@ -71,6 +74,19 @@ namespace APIMarketplaceApp.Services
             }
             return null;
         }
+
+          public string ActivateVendeur(string id)
+        {
+      
+            var filter = Builders<Vendeur>.Filter.Eq("Id", id);
+            var update = Builders<Vendeur>.Update.Set("isActived", "true") ;
+
+            //vendeurs.ReplaceOne(x =>  x.isVerified == true, account);
+            //var result = this.vendeurs.UpdateOne(account, update);
+            this.vendeurs.UpdateOne(filter, update);
+            return ("Vendeur Actived");
+        }
+
 
          public string  RegisterClient(ClientRequest client, string origin)
         { 
@@ -81,6 +97,7 @@ namespace APIMarketplaceApp.Services
                 account.Role="isClient" ;
                 account.MotDePasse = BCrypt.Net.BCrypt.HashPassword(client.MotDePasse);
                 account.isVerified = false ;
+                account.isActived = false ;
                 this.clients.InsertOne(account) ;
                 sendVerificationEmails(account,origin);
                 return  "Success Registration"; 
@@ -88,6 +105,20 @@ namespace APIMarketplaceApp.Services
             }
             return null;
         }
+
+        public string ActivateClient(string id)
+        {
+      
+            var filter = Builders<Client>.Filter.Eq("Id", id);
+            var update = Builders<Client>.Update.Set("isActived", "true") ;
+
+            //vendeurs.ReplaceOne(x =>  x.isVerified == true, account);
+            //var result = this.vendeurs.UpdateOne(account, update);
+            this.clients.UpdateOne(filter, update);
+            return ("Vendeur Actived");
+        }
+
+
 
         public string  RegisterAdmin(UserAdminRequest admin, string origin)
         { 
@@ -128,12 +159,17 @@ namespace APIMarketplaceApp.Services
         public async Task RemoveAsync(string id) =>
             await produits.DeleteOneAsync(x => x.Id_prod == id);
         
-          public async Task RemoveAsyn(string id) =>
+        public async Task RemoveAsyn(string id) =>
             await contacts.DeleteOneAsync(x => x.Id == id);
+
+        public async Task RemoveAsy(string id) =>
+            await notifications.DeleteOneAsync(x => x.Id == id);
 
         public List<ProductVend> GetProductById(string id) => produits.Find<ProductVend>(produit => produit.Id == id).ToList();
 
         public List<ProductVend> GetProductByCategory(string sous_famille_prod) => produits.Find<ProductVend>(produit => produit.sous_famille_prod == sous_famille_prod).ToList();
+
+        
 
           private string randomTokenString()
         {
@@ -145,7 +181,7 @@ namespace APIMarketplaceApp.Services
         }
 
         public  AuthenticateResponse Login(AuthenticateRequest model) {
-            var vendeura = this.vendeurs.Find(x => x.Email == model.Email && x.isVerified).FirstOrDefault();
+            var vendeura = this.vendeurs.Find(x => x.Email == model.Email && x.isVerified && x.isActived).FirstOrDefault();
             if (vendeura != null){
                 bool isValidPassword = BCrypt.Net.BCrypt.Verify(model.MotDePasse , vendeura.MotDePasse);
                 if (isValidPassword) {
@@ -157,7 +193,7 @@ namespace APIMarketplaceApp.Services
         }
 
         public  AdminUserResponse LoginUser(AuthenticateRequest model) {
-            var client = this.clients.Find(x => x.Email == model.Email).FirstOrDefault();
+            var client = this.clients.Find(x => x.Email == model.Email && x.isVerified && x.isActived).FirstOrDefault();
             if (client != null) {
                 bool isValidPassword = BCrypt.Net.BCrypt.Verify(model.MotDePasse , client.MotDePasse);
                 if (isValidPassword) {
@@ -427,6 +463,20 @@ namespace APIMarketplaceApp.Services
                 to : email ,
                 subject : sujet ,
                 html : message) ;
+        }
+
+
+
+         public string DelivredOrder(string id)
+        {
+      
+            var filter = Builders<Commande>.Filter.Eq("Id", id);
+            var update = Builders<Commande>.Update.Set("delivred", "true") ;
+
+            //vendeurs.ReplaceOne(x =>  x.isVerified == true, account);
+            //var result = this.vendeurs.UpdateOne(account, update);
+            this.commandes.UpdateOne(filter, update);
+            return ("Order delivred");
         }
 
         

@@ -143,7 +143,7 @@ namespace APIMarketplaceApp.Controllers
                 {
                     
                     allUserDTO.Add(new User(client.Id,client.Nom, client.Prenom, client.Email, client.Adresse ,
-                    client.Num_Telephone,client.ZipCode ));
+                    client.Num_Telephone,client.ZipCode, client.isActived ));
                 }
                 return await Task.FromResult(new ResponseModel(1, "", allUserDTO));
         }
@@ -282,17 +282,62 @@ namespace APIMarketplaceApp.Controllers
 
 
         [HttpPost("AddOrder")]
-        public async Task <ActionResult<IEnumerable<Commande>>> AddOrder(Commande commande)
+        public async Task <ActionResult<IEnumerable<Commande>>> AddOrder(CommandeRequest commande)
 
-        {   
-            commandes.InsertOne(commande);
+        {    var order = _mapper.Map<Commande>(commande);
+             order.delivred = false;
+             commandes.InsertOne(order);
             return Ok(new { message = "Order passed with success" });   
         } 
+
+
+        [HttpPost("UpdateOrder")]
+        public async Task<object> UpdateOrder(DelivredOrder model)
+
+        {
+            var resp =service.DelivredOrder(model.id);
+            if (resp == null)
+                return BadRequest(new { message = "Order not delivred." });
+            
+            return Ok(new { message = "Order delivred" });
+        }
+
+        [HttpPost("ActivateVendeur")]
+        public async Task<object> ActivateVendeur(ActiveVendeur model)
+
+        {
+            var resp =service.ActivateVendeur(model.id);
+            if (resp == null)
+                return BadRequest(new { message = "Account not activate." });
+            
+            return Ok(new { message = "Account Activate" });
+        }
+
+        [HttpPost("ActivateClient")]
+        public async Task<object> ActivateClient(ActivateClient model)
+
+        {
+            var resp =service.ActivateClient(model.id);
+            if (resp == null)
+                return BadRequest(new { message = "Account not activate." });
+            
+            return Ok(new { message = "Account Activate" });
+        }
+
+
 
         [HttpGet("GetOrder")]
         public  async Task<object> GetOrder()
 
         {  var result = commandes.Find(commande => true).ToList();  
+         
+            return result;
+            
+        } 
+         [HttpGet("GetOrderByEmail")]
+        public  async Task<object> GetOrderByEmail(string email)
+
+        {  var result = commandes.Find(x => x.email == email).ToList();  
          
             return result;
             

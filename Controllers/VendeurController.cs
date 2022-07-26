@@ -25,6 +25,8 @@ namespace APIMarketplaceApp.Controllers
         private readonly UserService service;
         private readonly IMongoCollection<Vendeur> vendeurs;
         private readonly IMongoCollection<ProductVend> produits;
+
+        private readonly IMongoCollection<Notif> notifications ;
         private readonly IMapper _mapper;
       
 
@@ -34,6 +36,7 @@ namespace APIMarketplaceApp.Controllers
             var database = client.GetDatabase("MarketplaceSiteDB");
             vendeurs = database.GetCollection<Vendeur>("Vendeur");
             produits = database.GetCollection<ProductVend>("ProductVend");
+            notifications = database.GetCollection<Notif>("Notifications");
             service = _service;
             _mapper = mapper;
             
@@ -75,7 +78,13 @@ namespace APIMarketplaceApp.Controllers
             return Json(Products);
         }
         // POST: VendeurController/Create
+         [HttpGet("GetAllNotifications")]
+        public ActionResult <List<Notif>> GetAllNotifications(string id_vendeur)
+        {
+            var notifs = notifications.Find<Notif>(x => x.Id_vendeur == id_vendeur).ToList();
 
+            return Json(notifs);
+        }
 
 
         [HttpPut]
@@ -99,6 +108,21 @@ namespace APIMarketplaceApp.Controllers
 
              var Products = service.GetProductByCategory(sous_famille_prod);
             return Json(Products);
+        }
+
+        [HttpGet("GetProductByReference")]
+        public async Task<object> GetProductByReference (string  Reference)
+        {
+            var prod = produits.Find<ProductVend>(x => x.Reference == Reference).FirstOrDefault();
+            return prod ;
+        
+        }
+        [HttpGet("GetProductByBrand")]
+        public ActionResult <List<ProductVend>> GetProductByBrand (string Brand , string sous_famille_prod)
+        {
+            var prod = produits.Find<ProductVend>(x => x.sous_famille_prod == sous_famille_prod && x.Brand == Brand).ToList();
+            return Json(prod) ;
+        
         }
 
         [HttpPut("UpdateImage")]
@@ -159,6 +183,20 @@ namespace APIMarketplaceApp.Controllers
 
         return NoContent();
         }
+
+        /*  [HttpPost("deleteNotif")]
+        public async Task<IActionResult> DeleteNotif(string id)
+        {
+         var notif = this.notifications.Find(x => x.Id == id).FirstOrDefaultAsync();
+
+        if (notif is null)
+        {
+            return NotFound();
+        }
+         await service.RemoveAsy(id);
+
+        return NoContent();
+        } */
         
 
         [AllowAnonymous]
@@ -210,7 +248,7 @@ namespace APIMarketplaceApp.Controllers
                 {
                     
                     allUserDTO.Add(new User(vendeur.Id,vendeur.Nom, vendeur.Prenom, vendeur.Email, vendeur.Adresse ,
-                    vendeur.Num_Telephone,vendeur.ZipCode, vendeur.Organization ));
+                    vendeur.Num_Telephone,vendeur.ZipCode, vendeur.Organization , vendeur.isActived));
                 }
                 return await Task.FromResult(new ResponseModel(1, "", allUserDTO));
         }
@@ -223,7 +261,7 @@ namespace APIMarketplaceApp.Controllers
         {
             
                 var user =  vendeurs.Find<Vendeur>(vendeur => vendeur.Id == id).FirstOrDefault();
-                var UserDTO = new User((user.Id).ToString(),user.Nom, user.Prenom, user.Email, user.Adresse ,user.Num_Telephone , user.ZipCode , user.Organization);
+                var UserDTO = new User((user.Id).ToString(),user.Nom, user.Prenom, user.Email, user.Adresse ,user.Num_Telephone , user.ZipCode , user.Organization, user.isActived);
                 //UserDTO.Add(new User(user.Id,user.Nom, user.Prenom, user.Email, user.Adresse ,user.Num_Telephone));
                 return await Task.FromResult(new ResponseModel(1, "", UserDTO));
         }

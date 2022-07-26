@@ -36,6 +36,9 @@ namespace APIMarketplaceApp.Models
         [BsonElement("isVerified")]
         public bool isVerified { get;set; }
 
+        [BsonElement("isActived")]
+        public bool isActived { get;set;}
+
          [BsonElement("image_org")]
         public string image_org { get;set; }
 

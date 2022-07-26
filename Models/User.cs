@@ -2,7 +2,7 @@ namespace APIMarketplaceApp.Models
 {
     public class User
     {
-         public User(string id,string nom , string prenom , string email, string adresse , string num , int zipcode , string organization) {
+         public User(string id,string nom , string prenom , string email, string adresse , string num , int zipcode , string organization , bool IsActived ) {
             Id = id;
             Nom = nom;
             Prenom = prenom;
@@ -11,8 +11,9 @@ namespace APIMarketplaceApp.Models
             Num_Telephone =num;
             ZipCode = zipcode ;
             Organization =organization ;
+            isActived = IsActived;
         }
-           public User(string id,string nom , string prenom , string email, string adresse , string num , int zipcode) {
+           public User(string id,string nom , string prenom , string email, string adresse , string num , int zipcode , bool IsActived ) {
             Id = id;
             Nom = nom;
             Prenom = prenom;
@@ -20,6 +21,7 @@ namespace APIMarketplaceApp.Models
             Adresse = adresse;
             Num_Telephone =num;
             ZipCode = zipcode ;
+            isActived = IsActived;
            
         }
         public string Id { get; set; }
@@ -30,6 +32,7 @@ namespace APIMarketplaceApp.Models
         public string Num_Telephone { get; set; }
         public int ZipCode { get; set; }
         public string Organization { get; set; }
+        public bool isActived {get ;set ;}
 
 
         
