@@ -30,10 +30,14 @@ namespace APIMarketplaceApp.Services
         private readonly IMongoCollection<Contact> contacts;
         private readonly IMongoCollection<Commande> commandes;
         private readonly IMongoCollection<Notif> notifications ;
+
+        private readonly IMongoCollection<PortfeuilleVendeur> portfeuilles ;
+
         private readonly string key;
         private readonly AppSettings _appSettings;
         private readonly IEmailService _emailService;
         private readonly IMapper _mapper;
+        byte[] hash;
 
         public UserService(IConfiguration configuration ,IOptions<AppSettings> appSettings,
             IEmailService emailService , IMapper mapper)
@@ -47,6 +51,7 @@ namespace APIMarketplaceApp.Services
             contacts=database.GetCollection<Contact>("Contact") ;
             commandes=database.GetCollection<Commande>("Commande") ;
             notifications =database.GetCollection<Notif>("Notifications");
+            portfeuilles =database.GetCollection<PortfeuilleVendeur>("PortfeuilleVendeur");
 
             this.key = configuration.GetSection("JwtKey").ToString();
              _appSettings = appSettings.Value;
@@ -67,6 +72,7 @@ namespace APIMarketplaceApp.Services
                 account.MotDePasse = BCrypt.Net.BCrypt.HashPassword(vendeur.MotDePasse);
                 account.isVerified = false ;
                 account.isActived = false ;
+                account.CartNumber = CreateMD5Hash(vendeur.CartNumber);
                 this.vendeurs.InsertOne(account) ;
                 sendVerificationEmail(account,origin);
                 return  "Success Registration"; 
@@ -97,7 +103,7 @@ namespace APIMarketplaceApp.Services
                 account.Role="isClient" ;
                 account.MotDePasse = BCrypt.Net.BCrypt.HashPassword(client.MotDePasse);
                 account.isVerified = false ;
-                account.isActived = false ;
+                account.isActived = true ;
                 this.clients.InsertOne(account) ;
                 sendVerificationEmails(account,origin);
                 return  "Success Registration"; 
@@ -106,11 +112,11 @@ namespace APIMarketplaceApp.Services
             return null;
         }
 
-        public string ActivateClient(string id)
+        public string BlockClient(string id)
         {
       
             var filter = Builders<Client>.Filter.Eq("Id", id);
-            var update = Builders<Client>.Update.Set("isActived", "true") ;
+            var update = Builders<Client>.Update.Set("isActived", "false") ;
 
             //vendeurs.ReplaceOne(x =>  x.isVerified == true, account);
             //var result = this.vendeurs.UpdateOne(account, update);
@@ -153,6 +159,14 @@ namespace APIMarketplaceApp.Services
         {   
             var Order = _mapper.Map<Commande>(order);
             this.commandes.InsertOne(Order) ;
+
+        } 
+
+         public void AddPortfeuille(RequestPortfeuille solde )
+
+        {   
+            var Sold = _mapper.Map<PortfeuilleVendeur>(solde);
+            this.portfeuilles.InsertOne(Sold) ;
 
         } 
         
@@ -467,7 +481,7 @@ namespace APIMarketplaceApp.Services
 
 
 
-         public string DelivredOrder(string id)
+         public string DelivredOrder(string id ) 
         {
       
             var filter = Builders<Commande>.Filter.Eq("Id", id);
@@ -478,6 +492,22 @@ namespace APIMarketplaceApp.Services
             this.commandes.UpdateOne(filter, update);
             return ("Order delivred");
         }
+
+        public string CreateMD5Hash(string input)
+            {
+                // Step 1, calculate MD5 hash from input
+                MD5 md5 = System.Security.Cryptography.MD5.Create();
+                byte[] inputBytes = System.Text.Encoding.ASCII.GetBytes(input);
+                byte[] hashBytes = md5.ComputeHash(inputBytes);
+                
+                // Step 2, convert byte array to hex string
+                StringBuilder sb = new StringBuilder();
+                for (int i = 0; i < hashBytes.Length; i++)
+                {
+                    sb.Append(hashBytes[i].ToString("X2"));
+                }
+                return sb.ToString();
+            }
 
         
     }

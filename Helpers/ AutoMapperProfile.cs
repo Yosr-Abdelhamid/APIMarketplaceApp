@@ -34,6 +34,19 @@ namespace APIMarketplaceApp.Helpers
                     }
                 ));
 
+             CreateMap<RequestPortfeuille, PortfeuilleVendeur>()
+                .ForAllMembers(x => x.Condition(
+                    (src, dest, prop) =>
+                    {
+                        // ignore null & empty string properties
+                        if (prop == null) return false;
+                        if (prop.GetType() == typeof(string) && string.IsNullOrEmpty((string)prop)) return false;
+                        if (x.DestinationMember.Name == "Role") return false;
+
+                        return true;
+                    }
+                ));   
+
             CreateMap<ClientRequest, Client>()
                 .ForAllMembers(x => x.Condition(
                     (src, dest, prop) =>

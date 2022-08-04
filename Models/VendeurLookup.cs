@@ -8,7 +8,7 @@ namespace APIMarketplaceApp.Models
         public string Brand { get; set; }
         public int quantity { get; set; }
         public string description_prod { get; set; }
-        public decimal prix_prod { get; set; }
+        public string prix_prod { get; set; }
         public string  image_prod { get; set; }
 
         public List<Vendeur> Vendeurs { get; set; }

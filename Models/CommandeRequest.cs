@@ -41,6 +41,9 @@ namespace APIMarketplaceApp.Models
 
          [BsonElement("payment")]
         public  string payment { get; set; }
+        
+         [BsonElement("dateCommande")]
+        public  string dateCommande { get; set; }
 
     
     }

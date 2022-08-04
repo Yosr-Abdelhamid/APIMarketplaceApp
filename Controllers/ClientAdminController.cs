@@ -32,6 +32,7 @@ namespace APIMarketplaceApp.Controllers
         private readonly IMongoCollection<Vendeur> vendeurs ;
         private readonly IMongoCollection<Contact> contacts;
         private readonly IMongoCollection<Commande> commandes;
+         private readonly IMongoCollection<Commission> commissions;
         private readonly IMapper _mapper;
          private readonly IEmailService _emailService;
 
@@ -44,6 +45,8 @@ namespace APIMarketplaceApp.Controllers
             produits = database.GetCollection<ProductVend>("ProductVend");
             contacts=database.GetCollection<Contact>("Contact") ;
             commandes=database.GetCollection<Commande>("Commande") ;
+            commissions=database.GetCollection<Commission>("Commission") ;
+
             
             _emailService = emailService;
             service = _service;
@@ -232,9 +235,9 @@ namespace APIMarketplaceApp.Controllers
         
 
         [HttpGet("GetContact")]
-        public  async Task<object> GetContact()
+        public  ActionResult <List<Contact>> GetContact()
 
-        {  var test = contacts.Find(contact => true).ToList();  
+        {  var test = contacts.Find<Contact>(contact => true).ToList();  
          
             return test;
             
@@ -285,21 +288,47 @@ namespace APIMarketplaceApp.Controllers
         public async Task <ActionResult<IEnumerable<Commande>>> AddOrder(CommandeRequest commande)
 
         {    var order = _mapper.Map<Commande>(commande);
-             order.delivred = false;
+             order.delivred = "Not mention";
+             order.state = "Pending";
              commandes.InsertOne(order);
             return Ok(new { message = "Order passed with success" });   
         } 
 
 
-        [HttpPost("UpdateOrder")]
-        public async Task<object> UpdateOrder(DelivredOrder model)
+        [HttpPut("UpdateOrder")]
+        public async Task<object> UpdateOrder([FromForm] DelivredOrder model)
 
         {
-            var resp =service.DelivredOrder(model.id);
-            if (resp == null)
-                return BadRequest(new { message = "Order not delivred." });
-            
-            return Ok(new { message = "Order delivred" });
+           var filter = Builders<Commande>.Filter.Eq("Id", model.id);
+            var update = Builders<Commande>.Update.Set("state", "Scheduled")
+                                                    .Set("dateCommande" , model.dateCommande);
+
+            this.commandes.UpdateOne(filter, update);
+            return ("Order Updated");
+        }
+
+        [HttpPut("DelivredOrder")]
+         public async Task<object> DelivredOrder ([FromForm] ChangeOrder model)
+
+        {
+          var filter = Builders<Commande>.Filter.Eq("Id", model.id);
+            var update = Builders<Commande>.Update.Set("delivred", "Delivered")
+                                                    .Set("dateCommande" , model.dateCommande);
+            this.commandes.UpdateOne(filter, update);
+            return ("Order delivred");
+
+        }
+        
+        [HttpPut("RejectedOrder")]
+         public async Task<object> RejectedOrder ([FromForm] ChangeOrder model)
+
+        {
+          var filter = Builders<Commande>.Filter.Eq("Id", model.id);
+            var update = Builders<Commande>.Update.Set("delivred", "Rejected")
+                                                    .Set("dateCommande" , model.dateCommande);
+            this.commandes.UpdateOne(filter, update);
+            return ("Order Rejected");
+
         }
 
         [HttpPost("ActivateVendeur")]
@@ -317,7 +346,7 @@ namespace APIMarketplaceApp.Controllers
         public async Task<object> ActivateClient(ActivateClient model)
 
         {
-            var resp =service.ActivateClient(model.id);
+            var resp =service.BlockClient(model.id);
             if (resp == null)
                 return BadRequest(new { message = "Account not activate." });
             
@@ -366,12 +395,50 @@ namespace APIMarketplaceApp.Controllers
                 email= doc.email,
                 produits = (List<ProduitOrder>)doc.produits.Where(x => x.organization == organization) ,
                 total = doc.total ,
+                dateCommande = doc.dateCommande,
+                delivred = doc.delivred,
+                state = doc.state,
                 payment = doc.payment };
 
             var result = query.ToList();
             
             return result ;
         } 
+
+        [HttpGet("GetCommission")]
+        public  async Task<object> GetCommission()
+
+        {  var result = commissions.Find(commission => true).ToList();  
+         
+            return result;
+            
+        } 
+        
+        [HttpPut("UpdateCommission")]
+        public JsonResult Put([FromForm] CommissionUpdate Commision)
+        {    
+            var filter = Builders<Commission>.Filter.Eq("Id", Commision.Id);
+            var update = Builders<Commission>.Update.Set("commission", Commision.commission);
+            this.commissions.UpdateOne(filter, update);
+
+            return new JsonResult("Updated Successfully");
+        }
+
+        [HttpGet("GetCommisionByCategorie")]
+
+        public  async Task<Object> GetCommissionByCategorie(string categorie)
+
+        {  var result = commissions.Find(commission => commission.categorie == categorie).FirstOrDefault();  
+         
+            return new {
+                result.Id ,
+                result.commission,
+            };
+            
+        } 
+
+        
+
 
 
         } 

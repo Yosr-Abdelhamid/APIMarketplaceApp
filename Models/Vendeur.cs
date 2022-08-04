@@ -30,6 +30,15 @@ namespace APIMarketplaceApp.Models
         [BsonElement("Organization")]
         public string Organization { get; set; }
 
+        [BsonElement("CartName")]
+        public string CartName { get; set; }
+
+        [BsonElement("CartNumber")]
+        public string CartNumber { get; set; }
+
+        [BsonElement("expireDate")]
+        public string expireDate { get; set; }
+
         [BsonElement("MotDePasse")]
         public string MotDePasse { get; set; }
 

@@ -24,7 +24,7 @@ namespace APIMarketplaceApp.Models
         public string description_prod { get; set; }
 
         [BsonElement("prix_prod")]
-        public decimal prix_prod { get; set; }
+        public string prix_prod { get; set; }
 
         [BsonElement("image_prod")]
         public string  image_prod { get; set; }
@@ -37,7 +37,7 @@ namespace APIMarketplaceApp.Models
             public string Id { get; set; }
             public string Reference { get; set; }
              public int quantity { get; set; }
-             public decimal prix_prod { get; set; }
+             public string prix_prod { get; set; }
             public List<Vendeur> VendeurList ;
        } 
     

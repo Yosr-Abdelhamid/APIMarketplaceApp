@@ -27,6 +27,7 @@ namespace APIMarketplaceApp.Controllers
         private readonly IMongoCollection<ProductVend> produits;
 
         private readonly IMongoCollection<Notif> notifications ;
+        private readonly IMongoCollection<PortfeuilleVendeur> portfeuilles ;
         private readonly IMapper _mapper;
       
 
@@ -37,6 +38,7 @@ namespace APIMarketplaceApp.Controllers
             vendeurs = database.GetCollection<Vendeur>("Vendeur");
             produits = database.GetCollection<ProductVend>("ProductVend");
             notifications = database.GetCollection<Notif>("Notifications");
+            portfeuilles =database.GetCollection<PortfeuilleVendeur>("PortfeuilleVendeur");
             service = _service;
             _mapper = mapper;
             
@@ -286,7 +288,33 @@ namespace APIMarketplaceApp.Controllers
             };
         }
            
-           
+        [HttpPost("AddPortfeuille")]
+        public IActionResult  AddPortfeuille(RequestPortfeuille portfeuille)
+
+        {    
+            service.AddPortfeuille(portfeuille) ;
+            return Ok(new { message = "Portfeuille added" });
+        } 
+
+
+        [HttpGet("GetPortfeuille")]
+        public async Task<object> GetPortfeuille (string  Id)
+        {
+            var poftf = portfeuilles.Find<PortfeuilleVendeur>(x => x.Id == Id).FirstOrDefault();
+            return poftf ;
+        
+        }
+
+         [HttpPut("UpdateSold")]
+        public JsonResult Put([FromForm] ChangeSoldPortf solde)
+        {    
+            var filter = Builders<PortfeuilleVendeur>.Filter.Eq("Id_portf", solde.Id_portf);
+            var update = Builders<PortfeuilleVendeur>.Update.Set("Sold", solde.Sold);
+            this.portfeuilles.UpdateOne(filter, update);
+
+            return new JsonResult("Updated Successfully");
+        }
+
         
     }
 }

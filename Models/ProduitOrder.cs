@@ -8,7 +8,7 @@ namespace APIMarketplaceApp.Models
             public string reference { get; set; }
 
             [BsonElement("prix")]
-            public decimal prix { get; set; }
+            public string prix { get; set; }
 
             [BsonElement("organization")]
             public string organization { get; set; }
