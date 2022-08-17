@@ -73,6 +73,8 @@ namespace APIMarketplaceApp.Services
                 account.isVerified = false ;
                 account.isActived = false ;
                 account.CartNumber = CreateMD5Hash(vendeur.CartNumber);
+                account.CartName = vendeur.CartName ;
+                account.expireDate = vendeur.expireDate;
                 this.vendeurs.InsertOne(account) ;
                 sendVerificationEmail(account,origin);
                 return  "Success Registration"; 
@@ -391,7 +393,7 @@ namespace APIMarketplaceApp.Services
 
             _emailService.Send(
                 to: vendeur.Email,
-                subject: "Sign-up Verification API - Reset Password",
+                subject: "Reset Password",
                 html: $@"<h4>Reset Password Email</h4>
                          {message1}"
             );
@@ -411,7 +413,7 @@ namespace APIMarketplaceApp.Services
 
             _emailService.Send(
                 to: client.Email,
-                subject: "Sign-up Verification API - Reset Password",
+                subject: "Reset Password",
                 html: $@"<h4>Reset Password Email</h4>
                          {message1}"
             );
@@ -480,6 +482,12 @@ namespace APIMarketplaceApp.Services
         }
 
 
+        public void sendNotifSeller(string email) {
+            _emailService.Send(
+                to : email ,
+                 subject: "Warning! Selling fees not paid",
+                html: $@"You have an unpaid selling fee. Please top up your wallet to continue the payment process.") ;
+        }
 
          public string DelivredOrder(string id ) 
         {

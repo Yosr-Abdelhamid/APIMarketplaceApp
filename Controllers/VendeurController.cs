@@ -54,7 +54,7 @@ namespace APIMarketplaceApp.Controllers
       
         [HttpPost]
         [EnableCors(origins: "http://localhost:4200", headers: "*", methods: "*")]
-        public  async Task<object>  Signup( RegisterRequest vendeur)
+        public  async Task<object>  Signup(RegisterRequest vendeur)
 
         {   var response = service.Signup(vendeur ,Request.Headers["origin"]);
             if (response == null) {
@@ -315,6 +315,29 @@ namespace APIMarketplaceApp.Controllers
             return new JsonResult("Updated Successfully");
         }
 
+        [HttpGet("GetPocketSeller")]
+        public async Task<object> GetPocketSeller()
+
+       {    
+            var query = from o in vendeurs.AsQueryable()
+             join i in portfeuilles.AsQueryable()
+             on o.Id equals i.Id
+             select new PotfeuilleVendeur
+            {
+                Id = o.Id,
+                Nom = o.Nom,
+                Prenom= o.Prenom,
+                Email = o.Email ,
+                Num_Telephone = o.Num_Telephone ,
+                Organization = o.Organization ,
+                Sold = i.Sold,
+                Id_portf = i.Id_portf
+            
+            };
+            var pocketseller =  query.ToList();
+            return pocketseller ; 
+            
+        }
         
     }
 }

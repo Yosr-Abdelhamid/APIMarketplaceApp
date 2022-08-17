@@ -51,6 +51,9 @@ namespace APIMarketplaceApp.Models
         [BsonElement("delivred")]
         public string delivred { get; set; }
 
+        [BsonElement("payed")]
+        public  string payed { get; set; }
+
     }
         
 }
