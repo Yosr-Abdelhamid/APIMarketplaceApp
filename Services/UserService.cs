@@ -34,10 +34,12 @@ namespace APIMarketplaceApp.Services
         private readonly IMongoCollection<PortfeuilleVendeur> portfeuilles ;
 
         private readonly string key;
+        static string cle { get; set; } = "A!9HHhi%XjjYY4YP2@Nob009X";
         private readonly AppSettings _appSettings;
         private readonly IEmailService _emailService;
         private readonly IMapper _mapper;
         byte[] hash;
+        
 
         public UserService(IConfiguration configuration ,IOptions<AppSettings> appSettings,
             IEmailService emailService , IMapper mapper)
@@ -58,7 +60,7 @@ namespace APIMarketplaceApp.Services
             _emailService = emailService;
             _mapper = mapper;
         }
-
+        
         public List<Vendeur> GetVendeurs() => vendeurs.Find(vendeur => true).ToList();
 
         public Vendeur GetVendeur(string id) => vendeurs.Find<Vendeur>(vendeur => (vendeur.Id).ToString() == id).FirstOrDefault();
@@ -72,7 +74,8 @@ namespace APIMarketplaceApp.Services
                 account.MotDePasse = BCrypt.Net.BCrypt.HashPassword(vendeur.MotDePasse);
                 account.isVerified = false ;
                 account.isActived = false ;
-                account.CartNumber = CreateMD5Hash(vendeur.CartNumber);
+                account.isNotBlocked = true ;
+                account.CartNumber = vendeur.CartNumber;
                 account.CartName = vendeur.CartName ;
                 account.expireDate = vendeur.expireDate;
                 this.vendeurs.InsertOne(account) ;
@@ -126,7 +129,17 @@ namespace APIMarketplaceApp.Services
             return ("Vendeur Actived");
         }
 
+        public string BlockSeller(string id)
+        {
+      
+            var filter = Builders<Vendeur>.Filter.Eq("Id", id);
+            var update = Builders<Vendeur>.Update.Set("isNotBlocked", "false") ;
 
+            //vendeurs.ReplaceOne(x =>  x.isVerified == true, account);
+            //var result = this.vendeurs.UpdateOne(account, update);
+            this.vendeurs.UpdateOne(filter, update);
+            return ("Vendeur blocked");
+        }
 
         public string  RegisterAdmin(UserAdminRequest admin, string origin)
         { 
@@ -197,7 +210,7 @@ namespace APIMarketplaceApp.Services
         }
 
         public  AuthenticateResponse Login(AuthenticateRequest model) {
-            var vendeura = this.vendeurs.Find(x => x.Email == model.Email && x.isVerified && x.isActived).FirstOrDefault();
+            var vendeura = this.vendeurs.Find(x => x.Email == model.Email && x.isVerified && x.isActived && x.isNotBlocked).FirstOrDefault();
             if (vendeura != null){
                 bool isValidPassword = BCrypt.Net.BCrypt.Verify(model.MotDePasse , vendeura.MotDePasse);
                 if (isValidPassword) {
@@ -516,8 +529,49 @@ namespace APIMarketplaceApp.Services
                 }
                 return sb.ToString();
             }
+         public static string Encrypt(string text)
+        {
+            using (var md5 = new MD5CryptoServiceProvider())
+            {
+                using (var tdes = new TripleDESCryptoServiceProvider())
+                {
+                    tdes.Key = md5.ComputeHash(UTF8Encoding.UTF8.GetBytes(cle));
+                    tdes.Mode = CipherMode.ECB;
+                    tdes.Padding = PaddingMode.PKCS7;
+
+                    using (var transform = tdes.CreateEncryptor())
+                    {
+                        byte[] textBytes = UTF8Encoding.UTF8.GetBytes(text);
+                        byte[] bytes = transform.TransformFinalBlock(textBytes, 0, textBytes.Length);
+                        return Convert.ToBase64String(bytes, 0, bytes.Length);
+                    }
+                }
+            }
+        }
+         public static string Decrypt(string cipher)
+        {
+            using (var md5 = new MD5CryptoServiceProvider())
+            {
+                using (var tdes = new TripleDESCryptoServiceProvider())
+                {
+                    tdes.Key = md5.ComputeHash(UTF8Encoding.UTF8.GetBytes(cle));
+                    tdes.Mode = CipherMode.ECB;
+                    tdes.Padding = PaddingMode.PKCS7;
+
+                    using (var transform = tdes.CreateDecryptor())
+                    {
+                        byte[] cipherBytes = Convert.FromBase64String(cipher);
+                        byte[] bytes = transform.TransformFinalBlock(cipherBytes, 0, cipherBytes.Length);
+                        return UTF8Encoding.UTF8.GetString(bytes);
+                    }
+                }
+            }
+        }
+
+       
+}
 
         
     }
-}
+
 

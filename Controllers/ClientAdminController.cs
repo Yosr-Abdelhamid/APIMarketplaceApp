@@ -423,6 +423,18 @@ namespace APIMarketplaceApp.Controllers
             return Ok(new { message = "Account Activate" });
         }
 
+         [HttpPost("BlockVendeur")]
+        public async Task<object> BlockVendeur(ActiveVendeur model)
+
+        {
+            var resp =service.BlockSeller(model.id);
+            if (resp == null)
+                return BadRequest(new { message = "Account not blocked." });
+            
+            return Ok(new { message = "Account Blocked" });
+        }
+
+
         [HttpPost("ActivateClient")]
         public async Task<object> ActivateClient(ActivateClient model)
 

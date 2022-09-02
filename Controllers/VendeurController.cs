@@ -250,7 +250,7 @@ namespace APIMarketplaceApp.Controllers
                 {
                     
                     allUserDTO.Add(new User(vendeur.Id,vendeur.Nom, vendeur.Prenom, vendeur.Email, vendeur.Adresse ,
-                    vendeur.Num_Telephone,vendeur.ZipCode, vendeur.Organization , vendeur.isActived));
+                    vendeur.Num_Telephone,vendeur.ZipCode, vendeur.Organization , vendeur.isActived , vendeur.isNotBlocked));
                 }
                 return await Task.FromResult(new ResponseModel(1, "", allUserDTO));
         }
@@ -263,7 +263,7 @@ namespace APIMarketplaceApp.Controllers
         {
             
                 var user =  vendeurs.Find<Vendeur>(vendeur => vendeur.Id == id).FirstOrDefault();
-                var UserDTO = new User((user.Id).ToString(),user.Nom, user.Prenom, user.Email, user.Adresse ,user.Num_Telephone , user.ZipCode , user.Organization, user.isActived);
+                var UserDTO = new User((user.Id).ToString(),user.Nom, user.Prenom, user.Email, user.Adresse ,user.Num_Telephone , user.ZipCode , user.Organization, user.isActived , user.isNotBlocked);
                 //UserDTO.Add(new User(user.Id,user.Nom, user.Prenom, user.Email, user.Adresse ,user.Num_Telephone));
                 return await Task.FromResult(new ResponseModel(1, "", UserDTO));
         }
@@ -284,7 +284,10 @@ namespace APIMarketplaceApp.Controllers
                  user.Num_Telephone,
                  user.ZipCode,
                  user.Organization,
-                 user.image_org
+                 user.image_org,
+                 user.CartName,
+                 user.CartNumber,
+                 user.expireDate,
             };
         }
            

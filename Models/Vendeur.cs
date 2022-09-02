@@ -47,6 +47,9 @@ namespace APIMarketplaceApp.Models
 
         [BsonElement("isActived")]
         public bool isActived { get;set;}
+          
+        [BsonElement("isNotBlocked")]
+        public bool isNotBlocked { get;set;}
 
          [BsonElement("image_org")]
         public string image_org { get;set; }
